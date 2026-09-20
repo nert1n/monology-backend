@@ -1,6 +1,6 @@
 # Backend — MONOLOGY
 
-NestJS API with Prisma (SQLite) and JWT auth.
+NestJS API with Prisma (PostgreSQL) and JWT auth.
 
 ## Structure
 
@@ -19,11 +19,14 @@ src/
 ## Setup
 
 ```bash
+docker compose up -d          # local Postgres
 cp .env.example .env
 bun install
 bunx prisma migrate dev
 bun run start:dev
 ```
+
+Production / Railway: see [DEPLOY.md](./DEPLOY.md).
 
 ## Main endpoints
 

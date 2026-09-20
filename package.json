@@ -14,7 +14,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "bun dist/main.js",
     "lint": "oxlint --type-aware src/ test/",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -33,7 +33,9 @@
     "import:imdb-movies": "bun run scripts/import-imdb-movies.ts",
     "import:imdb-movie-covers": "bun run scripts/enrich-imdb-movies.ts",
     "backfill:anime-covers": "bun run scripts/backfill-anime-covers.ts",
-    "backfill:anime-covers-2026": "bun run scripts/backfill-anime-covers.ts --year 2026"
+    "backfill:anime-covers-2026": "bun run scripts/backfill-anime-covers.ts --year 2026",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "railway:release": "prisma migrate deploy"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",
@@ -73,5 +75,8 @@
     "typescript": "^6.0.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.1.2"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
   }
 }

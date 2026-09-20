@@ -37,7 +37,7 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new LoggingInterceptor());
 
-  await app.listen(appConfig.port);
+  await app.listen(appConfig.port, '0.0.0.0');
 }
 
 await bootstrap();
