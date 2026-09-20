@@ -1,0 +1,294 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserSex {
+  PREFER_NOT_TO_SAY
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum InterfaceLanguage {
+  en
+  ru
+  uk
+}
+
+enum CategoryKind {
+  ANIME
+  MOVIE
+  SERIAL
+  BOOK
+  HENTAI
+}
+
+enum MediaType {
+  ANIME
+  MOVIE
+  SERIAL
+  BOOK
+  HENTAI
+}
+
+/// Catalog airing / publication status (distinct from user ItemStatus).
+enum MediaStatus {
+  ANNOUNCED
+  ONGOING
+  ENDED
+  CANCELLED
+  HIATUS
+}
+
+/// Age / content rating for catalog titles.
+enum ContentRating {
+  G
+  PG
+  PG_13
+  R
+  NC_17
+  R_18
+  RX
+}
+
+enum ItemStatus {
+  PLANNED
+  IN_PROGRESS
+  PAUSED
+  DONE
+  DROPPED
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+}
+
+enum ClubMemberRole {
+  OWNER
+  MEMBER
+}
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  username      String     @unique
+  passwordHash  String
+  displayName   String
+  bio           String     @default("")
+  avatarUrl            String?
+  /// Personal background image path under /uploads/backgrounds. Null = none.
+  profileBackgroundUrl String?
+  profileHidden        Boolean  @default(false)
+  /// Persona colors for public profile (hex/oklch). Null = site defaults.
+  profileColors        Json?
+  /// Personal website URL (public when set).
+  websiteUrl           String?
+  sex                  UserSex  @default(PREFER_NOT_TO_SAY)
+  /// Full date of birth (private; never exposed on public profile).
+  dateOfBirth          DateTime?
+  /// When true, public profile shows computed age (not the raw DOB).
+  displayAge           Boolean  @default(false)
+  /// Prefer showing 18+/NSFW media (filters Media.isAdult when false).
+  displayAdultContent  Boolean  @default(false)
+  interfaceLanguage    InterfaceLanguage @default(en)
+  /// Google account subject (`sub`). Null = not connected.
+  googleId             String?  @unique
+  googleConnectedAt    DateTime?
+  role          UserRole   @default(USER)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  categories    Category[]
+  achievements  UserAchievement[]
+  friendshipsRequested Friendship[] @relation("FriendshipRequester")
+  friendshipsReceived  Friendship[] @relation("FriendshipAddressee")
+  clubsOwned    Club[]
+  clubMemberships ClubMember[]
+  profileCommentsReceived ProfileComment[] @relation("ProfileCommentWall")
+  profileCommentsAuthored ProfileComment[] @relation("ProfileCommentAuthor")
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  title       String
+  description String   @default("")
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  unlocks     UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+}
+
+model Friendship {
+  id          String           @id @default(cuid())
+  requesterId String
+  addresseeId String
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  requester   User             @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee   User             @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+  @@index([requesterId, status])
+  @@index([addresseeId, status])
+}
+
+model Club {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String   @default("")
+  coverUrl    String?
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members     ClubMember[]
+
+  @@index([ownerId])
+}
+
+model ClubMember {
+  id       String         @id @default(cuid())
+  clubId   String
+  userId   String
+  role     ClubMemberRole @default(MEMBER)
+  joinedAt DateTime       @default(now())
+  club     Club           @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, userId])
+  @@index([userId])
+}
+
+model ProfileComment {
+  id            String   @id @default(cuid())
+  profileUserId String
+  authorId      String
+  body          String
+  createdAt     DateTime @default(now())
+  profileUser   User     @relation("ProfileCommentWall", fields: [profileUserId], references: [id], onDelete: Cascade)
+  author        User     @relation("ProfileCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([profileUserId, createdAt])
+  @@index([authorId])
+}
+
+model Category {
+  id        String       @id @default(cuid())
+  userId    String
+  name      String
+  slug      String
+  kind      CategoryKind
+  sortOrder Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     Item[]
+
+  @@unique([userId, slug])
+  @@index([userId])
+}
+
+model Genre {
+  id        String       @id @default(cuid())
+  name      String       @unique
+  slug      String       @unique
+  createdAt DateTime     @default(now())
+  media     MediaGenre[]
+
+  @@index([name])
+}
+
+model Media {
+  id            String         @id @default(cuid())
+  type          MediaType
+  title         String
+  description   String         @default("")
+  year          Int?
+  coverUrl      String?
+  /// Airing / publication status (not the viewer's watch status).
+  status        MediaStatus?
+  /// Total episode count when known (anime / serial / hentai).
+  episodeCount  Int?
+  /// Episodes released so far when known.
+  episodesAired Int?
+  contentRating ContentRating?
+  /// When true, hidden from catalog for users with displayAdultContent=false (and guests).
+  isAdult       Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  photos        MediaPhoto[]
+  items         Item[]
+  genres        MediaGenre[]
+
+  @@index([type])
+  @@index([title])
+  @@index([isAdult])
+  @@index([status])
+  @@index([contentRating])
+}
+
+model MediaGenre {
+  mediaId String
+  genreId String
+  media   Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  genre   Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([mediaId, genreId])
+  @@index([genreId])
+}
+
+model MediaPhoto {
+  id        String   @id @default(cuid())
+  mediaId   String
+  url       String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@index([mediaId])
+}
+
+model Item {
+  id          String     @id @default(cuid())
+  categoryId  String
+  mediaId     String?
+  title       String
+  status      ItemStatus @default(PLANNED)
+  rating      Float?
+  notes       String     @default("")
+  year        Int?
+  completedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  category    Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  media       Media?     @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+
+  @@index([categoryId])
+  @@index([mediaId])
+  @@unique([categoryId, mediaId])
+}
