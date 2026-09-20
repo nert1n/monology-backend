@@ -19,6 +19,22 @@ export type GoogleConfig = {
   frontendRedirectUrl: string;
 };
 
+/**
+ * Normalize one CORS origin: strip trailing slash; add https:// if scheme missing
+ * (bare hosts like `monology.vercel.app` never match browser Origin).
+ * Leaves `http://localhost…` alone when the scheme is already present.
+ */
+function normalizeCorsOrigin(origin: string): string {
+  const trimmed = origin.trim().replace(/\/$/, '');
+  if (!trimmed || trimmed === '*') {
+    return trimmed;
+  }
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+}
+
 /** Parse CORS_ORIGIN: `*` → true, comma-separated URLs → array, single URL → string. */
 function parseCorsOrigin(
   raw: string | undefined,
@@ -32,7 +48,7 @@ function parseCorsOrigin(
   }
   const parts = value
     .split(',')
-    .map((part) => part.trim())
+    .map((part) => normalizeCorsOrigin(part))
     .filter(Boolean);
   if (parts.length === 0) {
     return true;

@@ -49,7 +49,7 @@ Postgres does **not** auto-inject `DATABASE_URL` into the backend. On the **back
 |----------|--------|
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
 | `JWT_SECRET` | *(long random string you generate; not committed)* |
-| `CORS_ORIGIN` | `https://<frontend-host>` *(no trailing slash; comma-separated OK)* |
+| `CORS_ORIGIN` | `https://monology.vercel.app` *(scheme required; no trailing slash; comma-separated OK)* |
 | `NODE_ENV` | `production` *(optional but recommended)* |
 
 CLI equivalent (quote so the shell does not expand `${{…}}`):
@@ -57,7 +57,7 @@ CLI equivalent (quote so the shell does not expand `${{…}}`):
 ```bash
 railway variables --set 'DATABASE_URL=${{Postgres.DATABASE_URL}}' --service backend
 railway variables --set 'JWT_SECRET=<your-long-random-secret>' --service backend
-railway variables --set 'CORS_ORIGIN=https://<frontend-host>' --service backend
+railway variables --set 'CORS_ORIGIN=https://monology.vercel.app' --service backend
 ```
 
 If your DB service is named `PostgreSQL`, use `${{PostgreSQL.DATABASE_URL}}` instead.
@@ -67,7 +67,7 @@ If your DB service is named `PostgreSQL`, use `${{PostgreSQL.DATABASE_URL}}` ins
 | `DATABASE_URL` | yes | From Postgres plugin via reference above |
 | `JWT_SECRET` | yes | Long random string |
 | `JWT_EXPIRES_IN` | no | Default `7d` |
-| `CORS_ORIGIN` | yes (prod) | Frontend public URL, e.g. `https://….up.railway.app` (comma-separated OK) |
+| `CORS_ORIGIN` | yes (prod) | Frontend origin with scheme, e.g. `https://monology.vercel.app` (comma-separated OK). **Not** bare `monology.vercel.app` — browsers send `https://…` and reject a scheme-less ACAO. |
 | `PORT` | no | Railway sets this automatically |
 | `NODE_ENV` | no | `production` |
 | `API_PREFIX` | no | Default `api` |
@@ -107,15 +107,19 @@ Frontend `Dockerfile` / `railway.toml`:
 
 | Variable | Required | Example |
 |----------|----------|---------|
-| `VITE_API_BASE_URL` | yes | `https://<api-host>/api` |
-| `VITE_MEDIA_ORIGIN` | yes (prod) | `https://<api-host>` (no `/api`) |
+| `VITE_API_BASE_URL` | yes | `https://monology-backend-production.up.railway.app/api` |
+| `VITE_MEDIA_ORIGIN` | yes (prod) | `https://monology-backend-production.up.railway.app` (no `/api`) |
 | `PORT` | no | Railway sets this |
 
 Set these as **build** variables on Railway so Vite inlines them into the bundle.
 
+### Vercel frontend
+
+If the SPA is on Vercel (`https://monology.vercel.app`), set the same two `VITE_*` vars in the Vercel project (Production), then redeploy. Do **not** leave `VITE_API_BASE_URL=/api` — that calls Vercel, not this API. Details: frontend `DEPLOY.md`.
+
 ### CORS
 
-Backend `CORS_ORIGIN` must match the frontend origin (scheme + host, no trailing slash).
+Backend `CORS_ORIGIN` must match the frontend origin (scheme + host, no trailing slash), e.g. `https://monology.vercel.app`.
 
 ---
 
@@ -150,8 +154,8 @@ If you switch the service builder to Nixpacks/Railpack, `nixpacks.toml` is provi
 - [ ] Postgres plugin in the same Railway project
 - [ ] Backend Variables: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (or `PostgreSQL` if that is the service name)
 - [ ] Backend Variables: `JWT_SECRET` set (not the example value)
-- [ ] Backend Variables: `CORS_ORIGIN` = frontend public URL
+- [ ] Backend Variables: `CORS_ORIGIN=https://monology.vercel.app` (or your frontend URL, with `https://`)
 - [ ] Backend deploys; `/api/health` returns `ok`
 - [ ] Volume mounted at `/app/uploads` (if you need persistent media)
-- [ ] Frontend `VITE_API_BASE_URL` + `VITE_MEDIA_ORIGIN` set at **build** time
+- [ ] Frontend `VITE_API_BASE_URL` + `VITE_MEDIA_ORIGIN` set at **build** time (Vercel and/or Railway)
 - [ ] (Optional) Google OAuth callback URLs updated for production hosts
