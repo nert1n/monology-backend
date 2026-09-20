@@ -1,3 +1,9 @@
+# Build/deploy only. Env vars are NOT declared here — set them on the Railway
+# service Variables tab (see DEPLOY.md). Required for start:prod:
+#   DATABASE_URL = ${{Postgres.DATABASE_URL}}   # name must match your Postgres service
+#   JWT_SECRET   = <long random string>
+#   CORS_ORIGIN  = https://<frontend-host>
+
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
