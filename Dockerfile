@@ -19,6 +19,8 @@ RUN bunx prisma generate && bun run build
 FROM oven/bun:1.4-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+# Writable media root. On Railway mount a Volume at /app/uploads (same path).
+ENV UPLOADS_DIR=/app/uploads
 RUN apk add --no-cache openssl libc6-compat \
   && mkdir -p /app/uploads/avatars /app/uploads/backgrounds /app/uploads/media
 

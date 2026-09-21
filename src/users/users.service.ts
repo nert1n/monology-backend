@@ -12,6 +12,7 @@ import {
   Prisma,
 } from '../../generated/prisma/index.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { uploadsSubdir } from '../common/uploads-path.js';
 import type { AdminUpdateUserDto } from './dto/admin-update-user.dto.js';
 import type {
   ImportListEntryDto,
@@ -57,6 +58,8 @@ export type HistoryEntry = {
   media: {
     coverUrl: string | null;
     contentRating: string | null;
+    isAdult: boolean;
+    type: string;
   } | null;
   category: {
     name: string;
@@ -113,11 +116,11 @@ function emptyCounts(): StatusCounts {
 }
 
 function avatarUploadDir() {
-  return path.resolve(process.cwd(), 'uploads', 'avatars');
+  return uploadsSubdir('avatars');
 }
 
 function backgroundUploadDir() {
-  return path.resolve(process.cwd(), 'uploads', 'backgrounds');
+  return uploadsSubdir('backgrounds');
 }
 
 function publicAvatarPath(filename: string) {
@@ -244,6 +247,8 @@ export class UsersService {
                   year: true,
                   coverUrl: true,
                   contentRating: true,
+                  isAdult: true,
+                  type: true,
                 },
               },
             },
@@ -306,6 +311,8 @@ export class UsersService {
           ? {
               coverUrl: row.media.coverUrl,
               contentRating: row.media.contentRating,
+              isAdult: row.media.isAdult,
+              type: row.media.type,
             }
           : null,
         category: row.category,
@@ -575,7 +582,10 @@ export class UsersService {
       status: raw.status ?? null,
       rating,
       notes: raw.notes ?? raw.text ?? null,
-      categorySlug: raw.categorySlug?.trim() || null,
+      categorySlug:
+        raw.categorySlug?.trim() === 'hentai'
+          ? 'anime'
+          : raw.categorySlug?.trim() || null,
       categoryKind:
         raw.categoryKind ?? (type ? this.kindFromMediaType(type) : null),
       completedAt: raw.completedAt ?? null,
@@ -592,8 +602,6 @@ export class UsersService {
         return CategoryKind.SERIAL;
       case MediaType.BOOK:
         return CategoryKind.BOOK;
-      case MediaType.HENTAI:
-        return CategoryKind.HENTAI;
     }
   }
 
@@ -648,8 +656,6 @@ export class UsersService {
         return MediaType.SERIAL;
       case CategoryKind.BOOK:
         return MediaType.BOOK;
-      case CategoryKind.HENTAI:
-        return MediaType.HENTAI;
     }
   }
 

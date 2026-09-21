@@ -1,7 +1,4 @@
-import {
-  ContentRating,
-  MediaType,
-} from '../../generated/prisma/index.js';
+import { ContentRating } from '../../generated/prisma/index.js';
 
 const ADULT_RATINGS = new Set<ContentRating>([
   ContentRating.NC_17,
@@ -9,20 +6,30 @@ const ADULT_RATINGS = new Set<ContentRating>([
   ContentRating.RX,
 ]);
 
+const HENTAI_GENRE_KEYS = new Set(['hentai', 'хентай']);
+
 export function isAdultContentRating(
   rating: ContentRating | null | undefined,
 ): boolean {
   return rating != null && ADULT_RATINGS.has(rating);
 }
 
-/** Hentai and 18+/RX/NC-17 always count as adult; otherwise honor explicit flag. */
+export function isHentaiGenreName(name: string): boolean {
+  return HENTAI_GENRE_KEYS.has(name.trim().toLowerCase());
+}
+
+export function hasHentaiGenre(names: string[] | undefined): boolean {
+  return Boolean(names?.some(isHentaiGenreName));
+}
+
+/** Hentai genre and 18+/RX/NC-17 always count as adult; otherwise honor explicit flag. */
 export function resolveIsAdult(input: {
-  type: MediaType;
   contentRating?: ContentRating | null;
   isAdult?: boolean | null;
+  genres?: string[] | null;
 }): boolean {
-  if (input.type === MediaType.HENTAI) return true;
   if (isAdultContentRating(input.contentRating)) return true;
+  if (hasHentaiGenre(input.genres ?? undefined)) return true;
   return input.isAdult ?? false;
 }
 

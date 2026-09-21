@@ -14,7 +14,6 @@ const KIND_MEDIA_TYPES: Record<CategoryKind, MediaType[]> = {
   [CategoryKind.MOVIE]: [MediaType.MOVIE],
   [CategoryKind.SERIAL]: [MediaType.SERIAL],
   [CategoryKind.BOOK]: [MediaType.BOOK],
-  [CategoryKind.HENTAI]: [MediaType.HENTAI],
 };
 
 @Injectable()

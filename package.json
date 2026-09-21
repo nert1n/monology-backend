@@ -35,7 +35,16 @@
     "backfill:anime-covers": "bun run scripts/backfill-anime-covers.ts",
     "backfill:anime-covers-2026": "bun run scripts/backfill-anime-covers.ts --year 2026",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "railway:release": "prisma migrate deploy"
+    "railway:release": "prisma migrate deploy",
+    "db:export-sqlite": "bun run scripts/migrate-sqlite-to-postgres.ts --export-only",
+    "db:migrate-to-postgres": "bun run scripts/migrate-sqlite-to-postgres.ts",
+    "sync:uploads": "bun run scripts/sync-uploads-to-railway.ts",
+    "sync:uploads:pack": "bun run scripts/sync-uploads-to-railway.ts --pack",
+    "sync:uploads:pack-test": "bun run scripts/sync-uploads-to-railway.ts --pack-test",
+    "sync:uploads:upload": "bun run scripts/sync-uploads-to-railway.ts --upload",
+    "sync:uploads:ssh-pipe": "bun run scripts/sync-uploads-to-railway.ts --ssh-pipe",
+    "rewrite:shiki-covers-cdn": "bun run scripts/rewrite-shiki-covers-to-cdn.ts",
+    "mirror:remote-media": "bun run scripts/mirror-remote-media.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",

@@ -1,12 +1,12 @@
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import path from 'node:path';
 import { AppModule } from './app.module.js';
 import {
   AllExceptionsFilter,
   APP_CONFIG_KEY,
+  ensureUploadsDirs,
   LoggingInterceptor,
 } from './common/index.js';
 import type { AppConfig } from './config/index.js';
@@ -16,7 +16,10 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const appConfig = configService.getOrThrow<AppConfig>(APP_CONFIG_KEY);
 
-  app.useStaticAssets(path.resolve(process.cwd(), 'uploads'), {
+  // Volume mount must be /app/uploads (cwd in Docker). Empty volume needs subdirs.
+  const uploadsDir = ensureUploadsDirs();
+  Logger.log(`Serving static files from ${uploadsDir} at /uploads`, 'Bootstrap');
+  app.useStaticAssets(uploadsDir, {
     prefix: '/uploads',
   });
 

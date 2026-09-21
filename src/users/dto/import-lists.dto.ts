@@ -67,6 +67,10 @@ function toMediaType(value: unknown): unknown {
     return undefined;
   }
   const upper = trimmed.toUpperCase();
+  // Former media type; hentai titles are Anime + genre.
+  if (upper === 'HENTAI') {
+    return MediaType.ANIME;
+  }
   if ((Object.values(MediaType) as string[]).includes(upper)) {
     return upper;
   }
@@ -79,7 +83,35 @@ function toMediaType(value: unknown): unknown {
     series: MediaType.SERIAL,
     book: MediaType.BOOK,
     manga: MediaType.BOOK,
-    hentai: MediaType.HENTAI,
+    hentai: MediaType.ANIME,
+  };
+  return legacy[trimmed.toLowerCase()] ?? trimmed;
+}
+
+function toCategoryKind(value: unknown): unknown {
+  if (typeof value !== 'string') {
+    return value;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  const upper = trimmed.toUpperCase();
+  if (upper === 'HENTAI') {
+    return CategoryKind.ANIME;
+  }
+  if ((Object.values(CategoryKind) as string[]).includes(upper)) {
+    return upper;
+  }
+  const legacy: Record<string, CategoryKind> = {
+    anime: CategoryKind.ANIME,
+    movie: CategoryKind.MOVIE,
+    movies: CategoryKind.MOVIE,
+    serial: CategoryKind.SERIAL,
+    serials: CategoryKind.SERIAL,
+    book: CategoryKind.BOOK,
+    books: CategoryKind.BOOK,
+    hentai: CategoryKind.ANIME,
   };
   return legacy[trimmed.toLowerCase()] ?? trimmed;
 }
@@ -128,6 +160,7 @@ export class ImportListEntryDto {
   categorySlug?: string;
 
   @IsOptional()
+  @Transform(({ value }) => toCategoryKind(value))
   @IsEnum(CategoryKind)
   categoryKind?: CategoryKind;
 

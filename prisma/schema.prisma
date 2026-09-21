@@ -31,7 +31,6 @@ enum CategoryKind {
   MOVIE
   SERIAL
   BOOK
-  HENTAI
 }
 
 enum MediaType {
@@ -39,7 +38,6 @@ enum MediaType {
   MOVIE
   SERIAL
   BOOK
-  HENTAI
 }
 
 /// Catalog airing / publication status (distinct from user ItemStatus).
@@ -232,7 +230,7 @@ model Media {
   coverUrl      String?
   /// Airing / publication status (not the viewer's watch status).
   status        MediaStatus?
-  /// Total episode count when known (anime / serial / hentai).
+  /// Total episode count when known (anime / serial).
   episodeCount  Int?
   /// Episodes released so far when known.
   episodesAired Int?

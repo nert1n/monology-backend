@@ -41,3 +41,7 @@ prisma/*.db
 prisma/*.db-journal
 /uploads
 /scripts/.cache
+/tmp
+*.dump
+*.dump.sql
+**/sqlite-export.json

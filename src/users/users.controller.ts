@@ -26,6 +26,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard.js';
 import { RolesGuard } from '../auth/roles.guard.js';
+import { uploadsSubdir } from '../common/uploads-path.js';
 import { AdminUpdateUserDto } from './dto/admin-update-user.dto.js';
 import { ImportListsDto } from './dto/import-lists.dto.js';
 import { ListUsersQueryDto } from './dto/list-users-query.dto.js';
@@ -42,7 +43,7 @@ const ALLOWED_MIME = new Set([
 const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'] as const;
 
 function ensureUploadDir(...segments: string[]) {
-  const dir = path.resolve(process.cwd(), 'uploads', ...segments);
+  const dir = uploadsSubdir(...segments);
   mkdirSync(dir, { recursive: true });
   return dir;
 }

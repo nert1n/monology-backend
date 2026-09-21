@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import type { CreateMediaDto } from './dto/create-media.dto.js';
 import type { ListMediaQueryDto } from './dto/list-media-query.dto.js';
 import type { UpdateMediaDto } from './dto/update-media.dto.js';
+import { uploadsSubdir } from '../common/uploads-path.js';
 import {
   normalizeGenreNames,
   resolveIsAdult,
@@ -31,7 +32,7 @@ type MediaWithRelations = Prisma.MediaGetPayload<{
 }>;
 
 function mediaUploadDir() {
-  return path.resolve(process.cwd(), 'uploads', 'media');
+  return uploadsSubdir('media');
 }
 
 function publicMediaPath(filename: string) {
@@ -142,9 +143,9 @@ export class MediaService {
   async create(dto: CreateMediaDto) {
     const genreNames = normalizeGenreNames(dto.genres);
     const isAdult = resolveIsAdult({
-      type: dto.type,
       contentRating: dto.contentRating,
       isAdult: dto.isAdult,
+      genres: genreNames,
     });
 
     const media = await this.prisma.media.create({
@@ -174,19 +175,22 @@ export class MediaService {
 
   async update(id: string, dto: UpdateMediaDto) {
     const existing = await this.getById(id, true);
-    const nextType = dto.type ?? existing.type;
     const nextRating =
       dto.contentRating !== undefined
         ? dto.contentRating
         : existing.contentRating;
+    const nextGenreNames =
+      dto.genres !== undefined
+        ? normalizeGenreNames(dto.genres)
+        : (existing.genres ?? []).map((genre) => genre.name);
     const nextIsAdult = resolveIsAdult({
-      type: nextType,
       contentRating: nextRating,
       isAdult:
         dto.isAdult !== undefined
           ? dto.isAdult
-          : // Preserve explicit adult when not forced by type/rating.
+          : // Preserve explicit adult when not forced by rating/genre.
             existing.isAdult,
+      genres: nextGenreNames,
     });
 
     const data: Prisma.MediaUpdateInput = {

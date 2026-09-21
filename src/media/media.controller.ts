@@ -25,6 +25,7 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard.js';
 import { RolesGuard } from '../auth/roles.guard.js';
+import { uploadsSubdir } from '../common/uploads-path.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateMediaDto } from './dto/create-media.dto.js';
 import { ListMediaQueryDto } from './dto/list-media-query.dto.js';
@@ -39,7 +40,7 @@ const ALLOWED_MIME = new Set([
 ]);
 
 function mediaDestination() {
-  const dir = path.resolve(process.cwd(), 'uploads', 'media');
+  const dir = uploadsSubdir('media');
   mkdirSync(dir, { recursive: true });
   return dir;
 }

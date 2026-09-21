@@ -83,7 +83,22 @@ Copy the checklist from [`.env.example`](./.env.example).
 
 ### Uploads volume (avatars / covers)
 
-The API stores files under `./uploads`. Attach a **Railway Volume** mounted at `/app/uploads` on the backend service so files survive redeploys.
+The API stores files under `./uploads` (Docker/Railway: `/app/uploads`). Attach a **Railway Volume** mounted at **`/app/uploads`** on the backend service so files survive redeploys.
+
+Optional env: `UPLOADS_DIR=/app/uploads` (defaults to `{cwd}/uploads`).
+
+**Sync local media only** (not the DB): see [scripts/sync-uploads-to-railway.md](./scripts/sync-uploads-to-railway.md).
+
+```bash
+bun run sync:uploads              # print inventory + exact railway commands
+railway ssh --service monology-backend -- echo ok   # if Timeout → VPN/DNS
+bun run sync:uploads:upload       # after railway login + link (SFTP)
+# SFTP Timeout → CDN covers (no 1GB) then SSH pipe for small dirs:
+#   bun run rewrite:shiki-covers-cdn --apply
+#   bun run sync:uploads:ssh-pipe -- --only avatars,backgrounds
+```
+
+After `volume add`, wait until backend redeploy is Online before SFTP. Details: sync doc §0c.
 
 ### Verify
 
@@ -141,6 +156,29 @@ bun run start:dev
 
 `releaseCommand` runs `prisma migrate deploy` on each deploy — no manual migrate needed after the first successful release.
 
+### Migrate local SQLite data → Railway Postgres
+
+Local data currently lives in **`prisma/dev.db`** (SQLite; see `.env` `file:./dev.db`). Schema on Railway is already Postgres — you only need to copy **rows** (+ `uploads/` files).
+
+Full Russian step-by-step: [`scripts/migrate-local-to-railway.md`](./scripts/migrate-local-to-railway.md).
+
+Safe defaults (dry-run / export only):
+
+```bash
+# 1) Export local SQLite → tmp/sqlite-export.json (no prod writes)
+bun run db:export-sqlite
+
+# 2) Inspect plan against Railway URL (still no writes without --apply)
+TARGET_DATABASE_URL='postgresql://…from Railway…' \
+  bun run db:migrate-to-postgres -- --from-export tmp/sqlite-export.json
+
+# 3) YOU run import (wipe = replace all app tables; omit --wipe to merge by id)
+TARGET_DATABASE_URL='postgresql://…' \
+  bun run db:migrate-to-postgres -- --from-export tmp/sqlite-export.json --apply --wipe
+```
+
+**Warnings:** `--wipe` truncates production tables; copy `uploads/` to the Railway volume separately; never commit DB dumps (password hashes). Use the **Public** Railway URL (`*.proxy.rlwy.net` + `?sslmode=require`) from a laptop — see troubleshooting in [migrate-local-to-railway.md](./scripts/migrate-local-to-railway.md) if `Can't reach database server` (often ISP DNS). If credentials were exposed, rotate `POSTGRES_PASSWORD` in Railway.
+
 ---
 
 ## 5. Optional: Nixpacks without Docker
@@ -157,5 +195,6 @@ If you switch the service builder to Nixpacks/Railpack, `nixpacks.toml` is provi
 - [ ] Backend Variables: `CORS_ORIGIN=https://monology.vercel.app` (or your frontend URL, with `https://`)
 - [ ] Backend deploys; `/api/health` returns `ok`
 - [ ] Volume mounted at `/app/uploads` (if you need persistent media)
+- [ ] (Optional) Local SQLite data migrated — see [migrate-local-to-railway.md](./scripts/migrate-local-to-railway.md)
 - [ ] Frontend `VITE_API_BASE_URL` + `VITE_MEDIA_ORIGIN` set at **build** time (Vercel and/or Railway)
 - [ ] (Optional) Google OAuth callback URLs updated for production hosts
